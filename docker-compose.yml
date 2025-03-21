@@ -1,0 +1,94 @@
+services:
+  eureka-service:
+    build: ./eureka-service
+    ports:
+      - "8761:8761"
+    networks:
+      - ecommerce-network
+    environment:
+      - PORT=8761
+
+  api-gateway:
+    build: ./api-gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      - eureka-service
+    networks:
+      - ecommerce-network
+    environment:
+      - PORT=8080
+
+  auth-service:
+    build: ./auth-service
+    environment:
+      - PORT=8081
+      - SERVICE_NAME=auth-service
+    ports:
+      - "8081:8081"
+    depends_on:
+      - eureka-service
+    networks:
+      - ecommerce-network
+
+  order-service:
+    build: ./order-service
+    environment:
+      - PORT=8082
+      - SERVICE_NAME=order-service
+    ports:
+      - "8082:8082"
+    depends_on:
+      - eureka-service
+      - auth-service
+    networks:
+      - ecommerce-network
+
+  inventory-service:
+    build: ./inventory-service
+    environment:
+      - PORT=8083
+      - SERVICE_NAME=inventory-service
+    ports:
+      - "8083:8083"
+    depends_on:
+      - eureka-service
+      - order-service
+    networks:
+      - ecommerce-network
+
+  payment-service:
+    build: ./payment-service
+    environment:
+      - PORT=8084
+      - SERVICE_NAME=payment-service
+    ports:
+      - "8084:8084"
+    depends_on:
+      - eureka-service
+      - order-service
+    networks:
+      - ecommerce-network
+
+  rabbitmq:
+    image: "rabbitmq:management"
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - ecommerce-network
+
+  postgres:
+    image: "postgres:latest"
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: ecommerce_db
+    ports:
+      - "5432:5432"
+    networks:
+      - ecommerce-network
+
+networks:
+  ecommerce-network:
+    driver: bridge
