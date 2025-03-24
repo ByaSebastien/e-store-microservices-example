@@ -1,10 +1,7 @@
 package be.bstorm.orderservice.controllers;
 
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
@@ -21,5 +18,11 @@ public class OrderController {
     public String createOrder(@RequestBody Map<String, String> order) {
         rabbitTemplate.convertAndSend("order.exchange", "order.routingKey", order);
         return "Commande créée !";
+    }
+
+    @GetMapping("/orders/{orderId}")
+    String getOrder(@PathVariable String orderId) {
+        System.out.println("Voici le id : " + orderId);
+        return "number 777";
     }
 }

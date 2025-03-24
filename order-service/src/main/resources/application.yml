@@ -1,1 +1,13 @@
-spring.application.name=order-service
+server:
+  port: ${PORT}
+
+spring:
+  application:
+    name: ${SERVICE_NAME}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka-service:8761/eureka
+      register-with-eureka: true
+      fetch-registry: true

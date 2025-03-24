@@ -19,7 +19,8 @@ public class PaymentController {
 
     @PostMapping("/{orderId}")
     public String processPayment(@PathVariable String orderId) {
-        Map<String, String> order = orderClient.getOrder(orderId);
-        return "Paiement validé pour la commande : " + order.get("id");
+        System.out.println("OOOOOOOOOOOOOOOOOOOOOOOOOKKKKKKKKKKKKKKKKKKKKKKKKKKKK");
+        String order = orderClient.getOrder(orderId);
+        return "Paiement validé pour la commande : " + order;
     }
 }

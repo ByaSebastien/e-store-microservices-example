@@ -6,7 +6,7 @@ COPY src ./src
 RUN mvn clean package -DskipTests
 
 # Étape 2 : Exécution avec OpenJDK
-FROM openjdk:27
+FROM openjdk:17
 WORKDIR /app
 COPY --from=builder /app/target/*.jar app.jar
 EXPOSE ${PORT}

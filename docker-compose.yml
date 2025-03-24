@@ -7,6 +7,12 @@ services:
       - ecommerce-network
     environment:
       - PORT=8761
+    restart: on-failure
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8761/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   api-gateway:
     build: ./api-gateway
@@ -18,6 +24,7 @@ services:
       - ecommerce-network
     environment:
       - PORT=8080
+    restart: on-failure
 
   auth-service:
     build: ./auth-service
@@ -30,6 +37,7 @@ services:
       - eureka-service
     networks:
       - ecommerce-network
+    restart: on-failure
 
   order-service:
     build: ./order-service
@@ -43,6 +51,7 @@ services:
       - auth-service
     networks:
       - ecommerce-network
+    restart: on-failure
 
   inventory-service:
     build: ./inventory-service
@@ -56,6 +65,7 @@ services:
       - order-service
     networks:
       - ecommerce-network
+    restart: on-failure
 
   payment-service:
     build: ./payment-service
@@ -69,6 +79,7 @@ services:
       - order-service
     networks:
       - ecommerce-network
+    restart: on-failure
 
   rabbitmq:
     image: "rabbitmq:management"
@@ -77,6 +88,7 @@ services:
       - "15672:15672"
     networks:
       - ecommerce-network
+    restart: on-failure
 
   postgres:
     image: "postgres:latest"
@@ -88,6 +100,7 @@ services:
       - "5432:5432"
     networks:
       - ecommerce-network
+    restart: on-failure
 
 networks:
   ecommerce-network:

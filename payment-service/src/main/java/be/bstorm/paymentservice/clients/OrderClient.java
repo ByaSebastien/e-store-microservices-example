@@ -7,9 +7,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.Map;
 
-@Component
 @FeignClient(name = "order-service")
 public interface OrderClient {
     @GetMapping("/orders/{orderId}")
-    Map<String, String> getOrder(@PathVariable String orderId);
+    String getOrder(@PathVariable("orderId") String orderId);
 }
