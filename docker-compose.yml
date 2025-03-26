@@ -1,86 +1,4 @@
 services:
-  eureka-service:
-    build: ./eureka-service
-    ports:
-      - "8761:8761"
-    networks:
-      - ecommerce-network
-    environment:
-      - PORT=8761
-    restart: on-failure
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8761/actuator/health" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  api-gateway:
-    build: ./api-gateway
-    ports:
-      - "8080:8080"
-    depends_on:
-      - eureka-service
-    networks:
-      - ecommerce-network
-    environment:
-      - PORT=8080
-    restart: on-failure
-
-  auth-service:
-    build: ./auth-service
-    environment:
-      - PORT=8081
-      - SERVICE_NAME=auth-service
-    ports:
-      - "8081:8081"
-    depends_on:
-      - eureka-service
-    networks:
-      - ecommerce-network
-    restart: on-failure
-
-  order-service:
-    build: ./order-service
-    environment:
-      - PORT=8082
-      - SERVICE_NAME=order-service
-    ports:
-      - "8082:8082"
-    depends_on:
-      - eureka-service
-      - auth-service
-    networks:
-      - ecommerce-network
-    restart: on-failure
-
-  inventory-service:
-    build: ./inventory-service
-    environment:
-      - PORT=8083
-      - SERVICE_NAME=inventory-service
-    ports:
-      - "8083:8083"
-    depends_on:
-      - eureka-service
-      - order-service
-    networks:
-      - ecommerce-network
-    restart: on-failure
-
-  payment-service:
-    build: ./payment-service
-    environment:
-      - PORT=8084
-      - SERVICE_NAME=payment-service
-    ports:
-      - "8084:8084"
-    depends_on:
-      - eureka-service
-      - order-service
-    networks:
-      - ecommerce-network
-    restart: on-failure
-
   rabbitmq:
     image: "rabbitmq:management"
     ports:
@@ -88,7 +6,12 @@ services:
       - "15672:15672"
     networks:
       - ecommerce-network
-    restart: on-failure
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "rabbitmqctl", "status" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   postgres:
     image: "postgres:latest"
@@ -100,7 +23,134 @@ services:
       - "5432:5432"
     networks:
       - ecommerce-network
-    restart: on-failure
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U user -d ecommerce_db" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  eureka-service:
+    build: ./eureka-service
+    ports:
+      - "8761:8761"
+    networks:
+      - ecommerce-network
+    environment:
+      - PORT=8761
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8761/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api-gateway:
+    build: ./api-gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      eureka-service:
+        condition: service_healthy
+    networks:
+      - ecommerce-network
+    environment:
+      - PORT=8080
+    restart: unless-stopped
+
+  auth-service:
+    build:
+      context: ./
+      dockerfile: auth-service/Dockerfile
+    environment:
+      - PORT=8081
+      - SERVICE_NAME=auth-service
+    ports:
+      - "8081:8081"
+    depends_on:
+      eureka-service:
+        condition: service_healthy
+      api-gateway:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - ecommerce-network
+    restart: unless-stopped
+
+  order-service:
+    build:
+      context: ./
+      dockerfile: order-service/Dockerfile
+    environment:
+      - PORT=8082
+      - SERVICE_NAME=order-service
+    ports:
+      - "8082:8082"
+    depends_on:
+      eureka-service:
+        condition: service_healthy
+      api-gateway:
+        condition: service_started
+      auth-service:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - ecommerce-network
+    restart: unless-stopped
+
+  inventory-service:
+    build:
+      context: ./
+      dockerfile: inventory-service/Dockerfile
+    environment:
+      - PORT=8083
+      - SERVICE_NAME=inventory-service
+    ports:
+      - "8083:8083"
+    depends_on:
+      eureka-service:
+        condition: service_healthy
+      api-gateway:
+        condition: service_started
+      order-service:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - ecommerce-network
+    restart: unless-stopped
+
+  payment-service:
+    build:
+      context: ./
+      dockerfile: payment-service/Dockerfile
+    environment:
+      - PORT=8084
+      - SERVICE_NAME=payment-service
+    ports:
+      - "8084:8084"
+    depends_on:
+      eureka-service:
+        condition: service_healthy
+      api-gateway:
+        condition: service_started
+      order-service:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - ecommerce-network
+    restart: unless-stopped
 
 networks:
   ecommerce-network:
